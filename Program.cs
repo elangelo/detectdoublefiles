@@ -86,6 +86,7 @@ namespace ConsoleApplication
                                     ctx.SaveChanges();
                                 }
                             }
+                            
                             ctx.SaveChanges();
                         }
                     }
