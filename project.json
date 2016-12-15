@@ -10,7 +10,8 @@
     "Microsoft.EntityFrameworkCore.Tools": "1.1.0-preview4-final",
     "Microsoft.EntityFrameworkCore.Design": "1.1.0",
     "System.Security.Cryptography.Algorithms": "4.3.0",
-    "CommandLineParser.Unofficial": "2.0.275"
+    "CommandLineParser.Unofficial": "2.0.275",
+    "MetadataExtractor": "2.0.0-rc1"
   },
   "tools": {
     "Microsoft.EntityFrameworkCore.Tools.DotNet": "1.1.0-preview4"

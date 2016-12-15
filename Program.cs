@@ -172,7 +172,7 @@ namespace ConsoleApplication
         {
             if (!ignoreDirectories.Contains(dirinfo.FullName))
             {
-                foreach (var dir in dirinfo.GetDirectories())
+                foreach (var dir in dirinfo.GetDirectories().OrderBy(dir => dir.FullName))
                 {
                     foreach (var file in findImgs(dir, ignoreDirectories))
                     {
@@ -180,7 +180,7 @@ namespace ConsoleApplication
                     }
                 }
 
-                foreach (var fileinfo in dirinfo.GetFiles())
+                foreach (var fileinfo in dirinfo.GetFiles().OrderBy(file => file.FullName))
                 {
                     if (imgExtenstions.Contains(fileinfo.Extension.ToLowerInvariant()))
                     {
