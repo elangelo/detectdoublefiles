@@ -200,36 +200,44 @@ namespace ConsoleApplication
         {
             using (var filestream = File.OpenRead(path))
             {
-                switch (kind)
+                if (filestream.CanRead)
                 {
-                    case hashes.minimal:
-                        {
-                            int maxbufferlength = GetMaxBufferLength(filestream.Length, 1000);
-                            byte[] buffer = new byte[maxbufferlength];
-                            filestream.Read(buffer, 0, maxbufferlength);
-                            var hash = hasher.ComputeHash(buffer);
-                            return ToHex(hash);
-                        }
-                    case hashes.medium:
-                        {
-                            int maxbufferlength = GetMaxBufferLength(filestream.Length, 10000);
-                            byte[] buffer = new byte[maxbufferlength];
-                            filestream.Read(buffer, 0, maxbufferlength);
-                            var hash = hasher.ComputeHash(buffer);
-                            return ToHex(hash);
-                        }
-                    case hashes.full:
-                        {
-                            filestream.Seek(0, SeekOrigin.Begin);
-                            var hash = hasher.ComputeHash(filestream);
-                            return ToHex(hash);
-                        }
-                    default:
-                        {
+                    switch (kind)
+                    {
+                        case hashes.minimal:
+                            {
+                                int maxbufferlength = GetMaxBufferLength(filestream.Length, 1000);
+                                Console.WriteLine(maxbufferlength);
+                                byte[] buffer = new byte[maxbufferlength];
+                                filestream.Read(buffer, 0, maxbufferlength);
+                                var hash = hasher.ComputeHash(buffer);
+                                return ToHex(hash);
+                            }
+                        case hashes.medium:
+                            {
+                                int maxbufferlength = GetMaxBufferLength(filestream.Length, 10000);
+                                byte[] buffer = new byte[maxbufferlength];
+                                filestream.Read(buffer, 0, maxbufferlength);
+                                var hash = hasher.ComputeHash(buffer);
+                                return ToHex(hash);
+                            }
+                        case hashes.full:
+                            {
+                                filestream.Seek(0, SeekOrigin.Begin);
+                                var hash = hasher.ComputeHash(filestream);
+                                return ToHex(hash);
+                            }
+                        default:
+                            {
 
-                            var hash = hasher.ComputeHash(filestream);
-                            return ToHex(hash);
-                        }
+                                var hash = hasher.ComputeHash(filestream);
+                                return ToHex(hash);
+                            }
+                    }
+                }
+                else
+                {
+                    throw new Exception($"Can't read file: {path}");
                 }
             }
         }
