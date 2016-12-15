@@ -29,7 +29,7 @@ namespace ConsoleApplication
                         {
                             foreach (var img in findImgs(new DirectoryInfo(path)))
                             {
-                                string longerhash = "", fullhash = "";
+                                string mediumhash = "", fullhash = "";
                                 var hash = GetMd5Hash(md5Hash, img, hashes.minimal);
 
                                 //System.Console.WriteLine(hash);
@@ -39,23 +39,23 @@ namespace ConsoleApplication
                                     var otherfilename = minimalhashes[hash];
                                     if (otherfilename != "EMPTY")
                                     {
-                                        var longerhashforotherfilename = GetMd5Hash(md5Hash, img, hashes.medium);
-                                        mediumhashes.Add(longerhashforotherfilename, otherfilename);
+                                        var mediumhashforotherfilename = GetMd5Hash(md5Hash, img, hashes.medium);
+                                        mediumhashes.Add(mediumhashforotherfilename, otherfilename);
                                         //clear filename on minimal hash so later on we know we already have a medium hash for this one
                                         minimalhashes[hash] = "EMPTY";
                                     }
 
                                     doubles++;
-                                    longerhash = GetMd5Hash(md5Hash, img, hashes.medium);
-                                    if (mediumhashes.ContainsKey(longerhash))
+                                    mediumhash = GetMd5Hash(md5Hash, img, hashes.medium);
+                                    if (mediumhashes.ContainsKey(mediumhash))
                                     {
-                                        var otherfilename2 = mediumhashes[longerhash];
-                                        if (otherfilename != "EMPTY")
+                                        var otherfilename2 = mediumhashes[mediumhash];
+                                        if (otherfilename2 != "EMPTY")
                                         {
-                                            var longerhashforotherfilename = GetMd5Hash(md5Hash, img, hashes.full);
-                                            fullhashes.Add(longerhashforotherfilename, otherfilename);
+                                            var fullhashforotherfilename = GetMd5Hash(md5Hash, otherfilename2, hashes.full);
+                                            fullhashes.Add(fullhashforotherfilename, otherfilename2);
                                             //clear filename on minimal hash so later on we know we already have a medium hash for this one
-                                            mediumhashes[longerhash] = "EMPTY";
+                                            mediumhashes[mediumhash] = "EMPTY";
                                         }
 
                                         fullhash = GetMd5Hash(md5Hash, img, hashes.full);
@@ -71,7 +71,7 @@ namespace ConsoleApplication
                                     }
                                     else
                                     {
-                                        mediumhashes.Add(longerhash, img);
+                                        mediumhashes.Add(mediumhash, img);
                                     }
                                 }
                                 else
@@ -80,13 +80,13 @@ namespace ConsoleApplication
                                 }
 
                                 counter++;
-                                ctx.Images.Add(new ImageItem() { Path = img, Checksum1 = hash, Checksum2 = longerhash, Checksum3 = fullhash });
+                                ctx.Images.Add(new ImageItem() { Path = img, Checksum1 = hash, Checksum2 = mediumhash, Checksum3 = fullhash });
                                 if (counter % 1000 == 0)
                                 {
                                     ctx.SaveChanges();
                                 }
                             }
-                            
+
                             ctx.SaveChanges();
                         }
                     }
@@ -146,11 +146,13 @@ namespace ConsoleApplication
                         }
                     case hashes.full:
                         {
+                            filestream.Seek(0, SeekOrigin.Begin);
                             var hash = hasher.ComputeHash(filestream);
                             return ToHex(hash);
                         }
                     default:
                         {
+                            
                             var hash = hasher.ComputeHash(filestream);
                             return ToHex(hash);
                         }

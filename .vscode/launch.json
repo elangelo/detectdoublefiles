@@ -7,7 +7,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceRoot}/bin/Debug/netcoreapp1.1/detectdoubles.dll",
-            "args": ["/home/samuel/temp"],
+            "args": ["/home/samuel/Desktop/testfiles"],
             "cwd": "${workspaceRoot}",
             "externalConsole": false,
             "stopAtEntry": false,
