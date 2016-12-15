@@ -101,64 +101,70 @@ namespace ConsoleApplication
                         {
                             foreach (var img in findImgs(new DirectoryInfo(path), ignoreDirectories))
                             {
-                                string mediumhash = "", fullhash = "";
-                                var hash = GetMd5Hash(md5Hash, img, hashes.minimal);
-
-                                //System.Console.WriteLine(hash);
-                                if (minimalhashes.ContainsKey(hash))
+                                try
                                 {
-                                    //calculate mediumhashes for the other matching minimal hash;
-                                    var otherfilename = minimalhashes[hash];
-                                    if (otherfilename != "EMPTY")
-                                    {
-                                        var mediumhashforotherfilename = GetMd5Hash(md5Hash, img, hashes.medium);
-                                        mediumhashes.Add(mediumhashforotherfilename, otherfilename);
-                                        //clear filename on minimal hash so later on we know we already have a medium hash for this one
-                                        minimalhashes[hash] = "EMPTY";
-                                    }
+                                    string mediumhash = "", fullhash = "";
+                                    var hash = GetMd5Hash(md5Hash, img, hashes.minimal);
 
-                                    mediumhash = GetMd5Hash(md5Hash, img, hashes.medium);
-                                    if (mediumhashes.ContainsKey(mediumhash))
+                                    //System.Console.WriteLine(hash);
+                                    if (minimalhashes.ContainsKey(hash))
                                     {
-                                        var otherfilename2 = mediumhashes[mediumhash];
-                                        if (otherfilename2 != "EMPTY")
+                                        //calculate mediumhashes for the other matching minimal hash;
+                                        var otherfilename = minimalhashes[hash];
+                                        if (otherfilename != "EMPTY")
                                         {
-                                            var fullhashforotherfilename = GetMd5Hash(md5Hash, otherfilename2, hashes.full);
-                                            fullhashes.Add(fullhashforotherfilename, otherfilename2);
+                                            var mediumhashforotherfilename = GetMd5Hash(md5Hash, img, hashes.medium);
+                                            mediumhashes.Add(mediumhashforotherfilename, otherfilename);
                                             //clear filename on minimal hash so later on we know we already have a medium hash for this one
-                                            mediumhashes[mediumhash] = "EMPTY";
+                                            minimalhashes[hash] = "EMPTY";
                                         }
 
-                                        fullhash = GetMd5Hash(md5Hash, img, hashes.full);
-                                        if (fullhashes.ContainsKey(fullhash))
+                                        mediumhash = GetMd5Hash(md5Hash, img, hashes.medium);
+                                        if (mediumhashes.ContainsKey(mediumhash))
                                         {
-                                            logHelper.Log($"Doubles: {fullhashes[fullhash]} AND {img} are EQUAL");
-                                            doubles++;
+                                            var otherfilename2 = mediumhashes[mediumhash];
+                                            if (otherfilename2 != "EMPTY")
+                                            {
+                                                var fullhashforotherfilename = GetMd5Hash(md5Hash, otherfilename2, hashes.full);
+                                                fullhashes.Add(fullhashforotherfilename, otherfilename2);
+                                                //clear filename on minimal hash so later on we know we already have a medium hash for this one
+                                                mediumhashes[mediumhash] = "EMPTY";
+                                            }
+
+                                            fullhash = GetMd5Hash(md5Hash, img, hashes.full);
+                                            if (fullhashes.ContainsKey(fullhash))
+                                            {
+                                                logHelper.Log($"Doubles: {fullhashes[fullhash]} AND {img} are EQUAL");
+                                                doubles++;
+                                            }
+                                            else
+                                            {
+                                                fullhashes.Add(fullhash, img);
+                                            }
                                         }
                                         else
                                         {
-                                            fullhashes.Add(fullhash, img);
+                                            mediumhashes.Add(mediumhash, img);
                                         }
                                     }
                                     else
                                     {
-                                        mediumhashes.Add(mediumhash, img);
+                                        minimalhashes.Add(hash, img);
+                                    }
+
+                                    counter++;
+                                    ctx.Images.Add(new ImageItem() { Path = img, Checksum1 = hash, Checksum2 = mediumhash, Checksum3 = fullhash });
+                                    if (counter % 1000 == 0)
+                                    {
+                                        ctx.SaveChanges();
                                     }
                                 }
-                                else
+                                catch
                                 {
-                                    minimalhashes.Add(hash, img);
-                                }
-
-                                counter++;
-                                ctx.Images.Add(new ImageItem() { Path = img, Checksum1 = hash, Checksum2 = mediumhash, Checksum3 = fullhash });
-                                if (counter % 1000 == 0)
-                                {
-                                    ctx.SaveChanges();
+                                    Console.WriteLine($"problem with {img} detected");
                                 }
                             }
 
-                            ctx.SaveChanges();
                         }
                     }
                 }
@@ -207,7 +213,6 @@ namespace ConsoleApplication
                         case hashes.minimal:
                             {
                                 int maxbufferlength = GetMaxBufferLength(filestream.Length, 1000);
-                                Console.WriteLine(maxbufferlength);
                                 byte[] buffer = new byte[maxbufferlength];
                                 filestream.Read(buffer, 0, maxbufferlength);
                                 var hash = hasher.ComputeHash(buffer);
