@@ -45,7 +45,6 @@ namespace ConsoleApplication
                                         minimalhashes[hash] = "EMPTY";
                                     }
 
-                                    doubles++;
                                     mediumhash = GetMd5Hash(md5Hash, img, hashes.medium);
                                     if (mediumhashes.ContainsKey(mediumhash))
                                     {
