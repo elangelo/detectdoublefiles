@@ -3,18 +3,90 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using CommandLine;
+using System.Linq;
 
 namespace ConsoleApplication
 {
+    class Options
+    {
+        [Option('d', "directory", Required = true)]
+        public IEnumerable<string> InputDirectories { get; set; }
+
+        [Option('i', "ignore", Required = false)]
+        public IEnumerable<string> IgnoreDirectories { get; set; }
+
+        [OptionAttribute('l', "log", Required = false)]
+        public string LogFile { get; set; }
+    }
+
+    public class LogHelper
+    {
+        public bool LogToConsole;
+        public StreamWriter sw;
+
+        public LogHelper(string logfile)
+        {
+            if (string.IsNullOrWhiteSpace(logfile))
+            {
+                LogToConsole = true;
+            }
+            else
+            {
+                var logFile = File.Create(logfile);
+                sw = new StreamWriter(logFile);
+                sw.AutoFlush = true;
+                LogToConsole = false;
+            }
+        }
+
+        public void Log(string message)
+        {
+            if (LogToConsole)
+            {
+                System.Console.WriteLine(message);
+            }
+            else
+            {
+                sw.WriteLine(message);
+                sw.Flush();
+            }
+        }
+    }
+
     public class Program
     {
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
+            ParserResult<Options> parserResult = CommandLine.Parser.Default.ParseArguments<Options>(args);
+
+            var exitCode = parserResult.MapResult(
+                options =>
+                {
+                    dothework(options.InputDirectories, options.IgnoreDirectories.ToList(), options.LogFile);
+                    return 0;
+                },
+                errors =>
+                {
+                    Console.Write(errors);
+                    return 1;
+                }
+            );
+
+            return exitCode;
+        }
+        public static LogHelper logHelper;
+
+        public static void dothework(IEnumerable<string> inputDirectories, List<string> ignoreDirectories, string logFile)
+        {
+            logHelper = new LogHelper(logFile);
+
+            // var isValid = CommandLine.Parser.Default.ParseArguments(args);
+
             Dictionary<string, string> minimalhashes = new Dictionary<string, string>();
             Dictionary<string, string> mediumhashes = new Dictionary<string, string>();
             Dictionary<string, string> fullhashes = new Dictionary<string, string>();
 
-            var basepaths = args;
             int doubles = 0;
             int counter = 0;
             using (MD5 md5Hash = MD5.Create())
@@ -23,11 +95,11 @@ namespace ConsoleApplication
                 {
                     ctx.Database.EnsureCreated();
 
-                    foreach (var path in basepaths)
+                    foreach (var path in inputDirectories)
                     {
                         if (Directory.Exists(path))
                         {
-                            foreach (var img in findImgs(new DirectoryInfo(path)))
+                            foreach (var img in findImgs(new DirectoryInfo(path), ignoreDirectories))
                             {
                                 string mediumhash = "", fullhash = "";
                                 var hash = GetMd5Hash(md5Hash, img, hashes.minimal);
@@ -60,7 +132,7 @@ namespace ConsoleApplication
                                         fullhash = GetMd5Hash(md5Hash, img, hashes.full);
                                         if (fullhashes.ContainsKey(fullhash))
                                         {
-                                            System.Console.WriteLine($"Doubles: {fullhashes[fullhash]} AND {img} are EQUAL");
+                                            logHelper.Log($"Doubles: {fullhashes[fullhash]} AND {img} are EQUAL");
                                             doubles++;
                                         }
                                         else
@@ -96,21 +168,24 @@ namespace ConsoleApplication
 
         public static List<string> imgExtenstions = new List<string>() { ".jpg", ".jpeg", ".tif", ".tiff", ".dng" };
 
-        private static IEnumerable<string> findImgs(DirectoryInfo dirinfo)
+        private static IEnumerable<string> findImgs(DirectoryInfo dirinfo, List<string> ignoreDirectories)
         {
-            foreach (var dir in dirinfo.GetDirectories())
+            if (!ignoreDirectories.Contains(dirinfo.FullName))
             {
-                foreach (var file in findImgs(dir))
+                foreach (var dir in dirinfo.GetDirectories())
                 {
-                    yield return file;
+                    foreach (var file in findImgs(dir, ignoreDirectories))
+                    {
+                        yield return file;
+                    }
                 }
-            }
 
-            foreach (var fileinfo in dirinfo.GetFiles())
-            {
-                if (imgExtenstions.Contains(fileinfo.Extension.ToLowerInvariant()))
+                foreach (var fileinfo in dirinfo.GetFiles())
                 {
-                    yield return fileinfo.FullName;
+                    if (imgExtenstions.Contains(fileinfo.Extension.ToLowerInvariant()))
+                    {
+                        yield return fileinfo.FullName;
+                    }
                 }
             }
         }
@@ -151,7 +226,7 @@ namespace ConsoleApplication
                         }
                     default:
                         {
-                            
+
                             var hash = hasher.ComputeHash(filestream);
                             return ToHex(hash);
                         }
